@@ -1,0 +1,156 @@
+---
+title: "711-Daniel_D_Mondal_R_Data_Storage"
+author: "Daniel D. Mondal"
+date: "2025-11-17"
+output: word_document
+---
+
+## 1.1 Data storage using matrix
+
+**Question 3.3** *Create the following matrices and work out the problems that follow.*
+```{r}
+library(matlib)
+```
+
+1.Generate 500 observations from a standard normal distribution. Create a matrix with 50 rows and 10 columns. Name the matrix as “data”. Name the columns as x1-x10 and the rows as 1:50. Imagine that each row corresponds to a particular person and the columns are the various numerical characteristics corresponding to each person. Report the dimension of the matrix.
+```{r}
+x=rnorm(500)
+data=matrix(x,ncol=10,byrow=F)
+colnames(data)=c(paste("x",1:10,sep=""))
+rownames(data)=c(1:50)
+head.matrix(round(data,4))
+```
+2. Find the column sum, column mean and column variances.
+```{r}
+#column Sum:
+apply(data,2,sum)
+#Column Mean:
+apply(data,2,mean)
+#Column Variance:
+apply(data,2,var)
+```
+3. Extract the information on x1 and x2. Compute simple correlation between x1 and x2. Produce a scatterplot with x1 and x2. Label your graph properly.
+```{r}
+x1_x2=data[,1:2]
+#Correlation coefficient between x1 and x2
+cor(x1_x2[,1],x1_x2[,2])
+plot(x1_x2[,1],x1_x2[,2],xlab="X1",ylab="x2",main="Scatterplot of x1 and x2",cex=0.5)
+```
+
+4.Transform the matrix “data” to a new matrix called “data.new” whose elements are 10 + 2× elements of “data”.
+```{r}
+data.new=10+2*data
+head.matrix(round(data.new,4))
+```
+5. Generate 50 observations from normal distribution with mean 10 and standard deviation 2. Store it in a vector. Append this vector with the columns of the matrix “data.new”. Call the new column as b and the new matrix as data.new1.
+```{r}
+x=rnorm(50,10,2)
+data.new.1=cbind(data.new,"x11"=x)
+head.matrix(round(data.new.1,4))
+```
+6. Generate 11 observations from N(10,4). These correspond to the data vector of a newly added person to the group. Append this with the rows of the matrix “data.new1”.
+```{r}
+s3=rnorm(11,10,2)
+data.new.1=rbind(data.new.1,"51"=s3)
+head.matrix(round(data.new.1,4))
+```
+7. Extract information on all the variables in data.new1 matrix, for any 11 individuals selected at random and without replacement. Store it in a new matrix called “A”.
+```{r}
+pos=sample(1:51,11,replace=F)
+A=matrix(data.new.1[pos,],ncol=11,byrow=T)
+head.matrix(round(A,4))
+```
+8. Find the dimension of A
+```{r}
+dim(A)
+```
+9.Calculate determinant of A, inverse of A and rank of the matrix A. Also find the eigen values and eigen vectors of A. From the eigen values comment on the definiteness of the matrix A.
+```{r}
+#Determinant of A
+det(A)
+#Inverse of A
+head.matrix(round(solve(A),4))
+#Rank of A
+R(A)
+eig = eigen(A)
+#Eigen values
+round(eig$values,4)
+#Eigen Vectors
+round(eig$vectors,4)
+```
+10. Generate 121 observations from N(10,4) and store it in a square matrix B.
+```{r}
+s4=rnorm(121,10,2)
+B=matrix(s4,ncol=11,byrow=T)
+head.matrix(round(B,4))
+```
+11.Perform the following matrix-algebra operations on the matrices A and B. (a) A+B (b) AT + BT (c)A × B.
+```{r}
+#11
+# Matrix A + Matrix B
+head.matrix(round(A+B,4))
+
+# Transpose of A + Transpose of B
+head.matrix(round(t(A)+t(B),4))
+
+#Matrix Multiplication of A and B
+head.matrix(round(A%*%B,4))
+```
+**Question 3.4.** *Suppose 12 rats were subjected to three different diets and their gains in weight (in grams) in 6 months were recorded.*
+
+*A: 2  5  9  1  7*
+*B: 3  3  1*
+*C: 5  7  3  8*
+
+*Prepare a list containing the data on A, B and C and answer the following:*
+```{r}
+A= c(2,5,9,1,7)
+B= c(3,3,1)
+C= c(5,7,3,8)
+
+L= list(A,B,C)
+L
+```
+(i) Display the data on B only.
+```{r}
+L[[2]]
+```
+(ii) Obtain the average gain in weight due to diet A, B and C separately.
+```{r}
+lapply(L,mean)
+```
+(iii) Obtain the standard deviation of the gain in weight due to diet A, B and C separately.
+```{r}
+lapply(L,sd)
+```
+
+(iv) Unlist the data and compute the grand mean.
+```{r}
+u = unlist(L)
+mean(u)
+```
+```{r}
+diet= rep(c("A","B","C"),times=c(5,3,4))
+summary(aov(u~diet))
+```
+Using the Anova table:
+
+*(v)Compute the variation in weights due to the diets.*
+Sum of squares due to the diet is 20.78
+
+*(vi)Compute within diet variation in weights.*
+Sum of Squares within the diets is 62.22
+
+*(vii) Compute the total variation in weights of rats.*
+Total Sum of Squares is 83
+
+*(viii) Is there any relationship between the answers in (v), (vi) and (vii)?*
+
+Yes we observe that:
+
+$${SS_{Total} = SS_{Between} + SS_{Within}}$$
+and,
+$$SS_{Between} + SS_{Within} = 20.78 + 62.22 = 83$$
+This relationship means that the total variability observed in the rats' weight gains is decomposed into two parts:
+1.Variability explained by the difference in diets ($SS_{Between}$).
+2.Variability due to random error/individual differences within the same diet group ($SS_{Within}$).
