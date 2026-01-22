@@ -1,0 +1,130 @@
+---
+title: "711 Boston Dataset"
+author: "Daniel D. Mondal"
+date: "2026-01-22"
+output: word_document
+---
+
+```{r}
+library(MASS)
+```
+
+## Question 1 
+Report the “class” of the data set. How many rows and columns are in
+this data set? What do the rows and columns represent?
+```{r}
+#Class of the Boston Dataset.
+class(Boston)
+
+#Dimension of the Boston Dataset.
+dim(Boston)
+
+#Contents of the Boston Dataset.
+str(Boston)
+
+attach(Boston)
+```
+*Class of the data set:*
+The data set is of class data.frame.
+
+*Dimensions:*
+Number of rows: 506
+Number of columns: 15
+
+*Interpretation:*
+Rows represent 506 suburbs of Boston.
+Columns contain data related to different socio-economic, environmental, and real-estate, such as crime rate, tax rate, pupil–teacher ratio, pollution levels.
+The column median value of owner-occupied homes (in 1000$) is considered as the dependent variable while other columns are considered independent.
+
+## Question 2
+Create a smaller data set with the variables median value of owner-occupied homes, per capita crime rate, nitrogen oxides concentration, proportion of blacks and percentage of lower status of the population. Choosing median value of owner occupied homes as the response and the rest as the predictors, make scatter plots of the response versus each predictor. Present the scatter plots in different panels of the same graph. Comment on your
+findings.
+
+```{r,fig.width= 9, fig.height=6}
+sub_boston = data.frame(medv,crim,nox,black,lstat)
+head(sub_boston)
+v_names = c("Median Value","Crime Rate","Nitrogen Oxide level","Proportion of Black","Lower Status Level")
+
+par(mfrow=c(2,2))
+for(i in 2:5)
+{
+  plot(sub_boston[,i],medv,main=paste("(",(i-1),") \n Scatterplot of\n",v_names[1],"vs",v_names[i]),
+       ylab=v_names[1], xlab= v_names[i],col="cyan4",pch=20)
+}
+```
+
+**Comments:**
+From the above plots we observe that:
+
+*Scatterplot (1):* 
+The higher median values of house prices are concentrated towards the lower values of crime rate.
+
+*Scatterplot (2):* 
+No definite relation between median value and nitrogen dioxide levels is present.
+
+*Scatterplot (3):* 
+The median values of house prices are concentrated towards the higher values of crime rate. 
+
+*Scatterplot (4):* 
+There a decent negative relation between median value and the population of lower status level population. The lower the proportion, the higher the median value.
+
+## Question 3
+Which suburb of Boston has lowest median value of owner-occupied homes?
+What are the values of the other predictors mentioned in (2), for that suburb. How do these values compare to the overall ranges for those predictors? Comment on your findings. Hint: Mention which percentile these values belong to.
+
+```{r}
+#Serial number of lowest median value for house price and the respective data points
+df= sub_boston[medv == min(medv),]
+df
+```
+We see that the minimum value of median value is 5000$ at suburbs with serial numbers 399 and 406.
+
+```{r}
+p = c()
+for(i in 1:4)
+{
+  cat(paste("Range of",v_names[(i+1)],":\n"))
+  cat(range(sub_boston[,(i+1)]),"\n\n")
+}
+
+cat("\n\nPercentiles of the factors for the following suburbs:\n")
+
+k = c(399,406)
+for(j in 1:2)
+{
+  cat("\nSuberb no.",k[j],"\n\n")
+  for(i in 1:4)
+  {
+    cat(v_names[(i+1)],":")
+    cat(floor(ecdf(sub_boston[,(i+1)])(df[j,(i+1)])*100),"\n")
+  }
+}
+
+```
+
+*Interpretation:*
+Crim: The crime rate for both suburb lies in the top percentiles (100th and 99th). We can say that higher crime causes the median value to fall.
+
+Lstat: Is the lower status proportion lies at a very percentile (97th and 89th). A higher proportion of the lower status proportion leads to the decline in median value.
+
+Conclusion: The suburbs likely represents an extreme case with very high crime and high lower-status population percentage compared to the other suburbs in consideration.
+
+## Question 4
+Does any suburb of Boston stand out for having notably high crime rates, tax rates, or pupil–teacher ratios? Hint: Use a boxplot to detect any outliers. If so, identify the suburbs that show the outlier values.
+```{r,fig.width=8}
+par(mfrow=c(1,3))
+df1 = data.frame(crim,tax,ptratio,medv)
+var_name= c("Crime Rate","Tax Rate","Pupil-Teacher Ratio")
+head(df1)
+
+for(i in 1:3)
+{
+  cat("\nData on Outliers present in", var_name[i],"are:\n")
+  print(df1[df1[,i] %in% (boxplot.stats(df1[,i])$out),c(i,4)])
+  cat("\nTotal number of outliers:",length(boxplot.stats(df1[,i])$out),"\n\n")
+  boxplot(df1[,i],main=paste("Boxplot for",var_name[i]))
+}
+```
+
+*Interpretation:*
+We see a large number of outliers (66) for crime rate and a few (15) for pupil-teacher ratio.
