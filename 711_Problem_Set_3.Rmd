@@ -1,0 +1,183 @@
+---
+title: "711 Problem set 4"
+author: "Daniel D. Mondal"
+date: "2026-02-12"
+output: word_document
+---
+```{r}
+rm(list=ls())
+set.seed(123)
+```
+
+## 2. Problem to demonstrate the role of qualitative (nominal) predictors in addition to quantitative predictors in multiple linear regression.
+
+Attach “Credits” data from R. Regress “balance” on: 
+(a) “gender” only.
+
+(b) “gender” and “ethnicity”.
+
+(c) “gender”, “ethnicity”, “income”.
+
+(d) Output all the regressions in (a)-(c) in a single table using stargazer. Comment on the significant coefficients in each of the models.
+
+(e) Explain how gender affects “balance” in each of the models (a)- (c) .
+
+(f) Compare the average credit card balance of a male African with a male Caucasian on the basis of model (b).
+
+(g) Compare the average credit card balance of a male African with a male Caucasian when each earns 100,000 dollars. For comparison, use the model in (c).
+
+(h) Compare and comment on the answers in (f) and (g)
+
+(i) Based on the model in (c), predict the credit card balance of a female Asian
+whose income is 2000,000 dollars.
+
+(j) Check the goodness of fit of the different models in (a) -(c) in terms of AIC,
+BIC and adjusted R2. Which model would you prefer?
+
+## Solution 2:
+```{r}
+rm(list=ls())
+library(ISLR)
+attach(Credit)
+??Credit
+View(Credit)
+```
+
+(a) Regression of Balance on Gender
+```{r}
+m1=lm(Balance~Gender)
+summary(m1)
+```
+
+Predicted Model: $\hat{Balance} = 509.8 + 19.73Gender_{Female}$
+
+Interpretation:
+When the Gender is male, predicted balance is 509.8 units
+when the Gender is female, predicted balance is 529.53 units
+
+
+(b) Regression of Balance on Gender and Ethnicity
+```{r}
+m2=lm(Balance~Gender+Ethnicity)
+summary(m2)
+```
+
+Predicted Model: 
+$\hat{Balance} =  520.88 + 20.04Gender_{Female} - 19.37Ethnicity_{Asian} - 12.65Ethnicity_{Caucasian}$
+
+Interpretation: When Gender is Male and the Ethnicity is African, the Balance is 520.88 units
+
+(c) Regression of Balance on Gender, Ethnicity, Income.
+```{r}
+m3=lm(Balance~Gender+Ethnicity+Income)
+summary(m3)
+```
+
+Predicted Model: 
+$\hat{Balance} =  230.0291 +  24.3396Gender_{Female} + 1.6372Ethnicity_{Asian} + 6.4469Ethnicity_{Caucasian} + 6.0542Income$
+
+(d) Comparing 3 models in Stargazer.
+```{r,warning=F}
+library(stargazer)
+stargazer(m1,m2,m3,type="text")
+```
+
+(e)
+We see that as other factors are added the effect of gender is increased. As more factors are considered, magnitude of increase in balance due to the gender being female increases.
+
+(f)
+We know the difference will be the the coefficient for Ethnicity: Caucasian.
+
+(g) Compare the average credit card balance of a male African with a male Caucasian on the basis of model (b).
+```{r}
+balance_m_afa=230.029 + 6.054*100
+balance_m_afa
+balance_m_cauc= 230.029 + 6.054*100 + 6.447
+balance_m_cauc
+
+#difference is the coefficient for Ethnicity Caucasian
+```
+
+We see that the difference is 6.447
+
+(h) Compare and comment on the answers in (f) and (g):
+We see that the difference is same in both cases. We can infer that the income being 0 or being fixed at a particular level the output remains unchanged.
+
+(i) Based on the model in (c), predict the credit card balance of a female Asian
+whose income is 2000,000 dollars.
+```{r}
+230.0291 +  24.3396 + 1.6372 + 6.0542*2000
+```
+
+the predicted balance is $12364410.
+
+(j) Check the goodness of fit of the different models in (a) -(c) in terms of AIC,
+BIC and adjusted R2. Which model would you prefer?
+```{r}
+model = c(paste("model:",c("(a)","(b)","(c)")))
+R_sq = c(summary(m1)$r.squared,summary(m2)$r.squared,summary(m3)$r.squared)
+
+data.frame(model,R_sq)
+```
+
+We would prefer model (c) as it explains 21% of the total variation in Balance.
+
+
+
+
+## 4. Problem to demonstrate the impact of ignoring interaction term in multiple linear regression
+
+Consider a simulation setting where the data is generated as follows:
+
+Step 1: Generate $x_{1i}$ from Normal(0,1) distribution, i = 1, 2, .., n
+
+Step 2: Generate $x_{2i}$ from Bernoulli(0.3) distribution, i = 1, 2, .., n
+
+Step 3: Generate $ε_i$ from Normal(0,1) and hence generate the response:
+
+$yi = β_0 + β_1x_{1i} + β_2x_{2i} + β_3(x_{1i}.x_{2i}) + ε_i$ , i = 1, 2, , , n.
+
+Step 4: Run two separate multiple linear regressions (i) using the model in Step 3 and (ii) using the model in Step 3 without the interaction term.
+
+Repeat Steps 1-4 , R = 1000 times. At each simulation compute the MSE for
+the correct model (i.e. model with the interaction term) and the naive model
+(i.e. the model without the interaction term). Finally find the average MSE’s for each model. From the output, demonstrate the impact of ignoring the iteraction term.)
+
+Carry out the analysis for n = 100 and the following parametric configurations:
+$(β_0, β_1, β_2, β_3) = (−2.5, 1.2, 2.3, 0.001) , (-2.5, 1.2. 2.3, 3.1)$. Set seed as 123.
+
+## Solution 4.
+```{r}
+compare_MSE = function(beta,n,R)
+{
+  mse_correct=c()
+  mse_naive=c()
+  for(i in 1:R)
+  {
+    x1 = rnorm(n)
+    x2 = rbinom(n,1,0.3)
+    e = rnorm(n)
+    
+    y = beta[1]+beta[2]*x1+beta[3]*x2+beta[4]*(x1*x2)+e
+    
+    model1 = lm(y~ x1 + x2+ I(x1*x2))
+    mse_correct[i] =  mean((y-predict(model1))^2)
+    
+    model2 = lm(y~x1+x2)
+    mse_naive[i] = mean((y-predict(model2))^2)
+  }
+  cat("Average Correct MSE:", mean(mse_correct),
+      "\tAverage Naive MSE:", mean(mse_naive), "\n\n")
+}
+
+beta1=c(-2.5,1.2,2.3,0.001)
+compare_MSE(beta1,100,1000)
+
+beta2=c(-2.5,1.2,2.3,3.1)
+compare_MSE(beta2,100,1000)
+```
+
+
+
+
+
