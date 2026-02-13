@@ -206,3 +206,4 @@ Using the stargazer function, we obtain a table containing the simple linear reg
 * Here model4, where medv is explained by lstat, has the highest $R^2$ value, 0.544 .
 * The coefficients indicate the direction and strength of the relationship between the response and each predictor. Among these, {lstat} shows the strongest association with {medv}.
 * With the stargazer package we can see the number of stars on the estimates and comment that each of simple linear equations are significant in the t-tests at 0.01 level of significance.
+
