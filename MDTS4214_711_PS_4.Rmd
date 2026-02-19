@@ -1,0 +1,189 @@
+---
+title: "MDTS4214_711_PS4"
+author: "Daniel D. Mondal"
+date: "2026-02-18"
+output: word_document
+---
+
+## Problem Set - 3 (continued)
+
+### 5.Problem to demonstrate the utility of non-linear regression over linear regression
+
+Get the fgl data set from “MASS” library.
+
+```{r}
+rm(list=ls())
+library(MASS)
+attach(fgl)
+str(fgl)
+```
+
+(a) Considering the refractive index (RI) of “Vehicle Window glass” as the variable of interest and assuming linearity of regression, run multiple linear regression of RI on different metallic oxides. From the p value, report which metallic oxide best explains the refractive index.
+
+```{r}
+summary(lm(RI ~ .,fgl[,-10]))
+```
+
+We obtain the p-values.
+```{r}
+pval = round(summary(lm(RI ~ .,fgl[,-10]))$coefficients[-1,4],5)
+pval
+```
+
+*Interpretation:* From the p-value we see that the oxides of Calcium are the most signicant, in determining the Refractive Index of the glass.
+
+(b) Run a simple linear regression of RI on the best predictor chosen in (a).
+```{r}
+m1 = (lm(RI ~ Ca))
+summary(m1)
+```
+
+We obtain the $R^2 =0.6568$, which implies that on an average calcium can approximately estimate 66% of the variation in the Refractive Index.
+
+(c) Can you further improve the regression of the refractive index of “Vehicle Window glass” on the predictor chosen by you in part (a)? Give the new fitted model and compare its performance with the model in (b).
+
+```{r}
+m2 = lm(RI ~ ., fgl)
+summary(m2)
+```
+
+From the regression fit we observe that: 
+Calcium is still significant at 0.001 level of significance.
+We consider a full model and we obtain a model with $R^2 = 0.9081$ which implies that the fit accounts for approximately 91% of the total variation in Refractive index of the window glass.
+
+When we consider the adjusted $R^2$ we see that its higher for model 2 (=0.9021) than model 1 (=0.6551). here we use the adjusted $R^2$ to compare as the number of predictors is also accounted for in this measure.
+
+____________________________________________________________________________________________________
+
+## Problem Set 4
+
+### 1 Problem to demonstrate multicollinearity.
+
+Consider the Credit data in the ISLR library. Choose Balance as the response and Age, Limit and Rating as the predictors.
+
+```{r}
+rm(list=ls())
+library(ISLR)
+library(stargazer)
+attach(Credit)
+str(Credit)
+```
+
+(a) Make a scatter plot of (i) Age versus Limit
+```{r}
+plot(Limit,Age,pch=20)
+```
+
+*Comment*: No linear relationship is seen.
+
+(ii) Rating Versus Limit. Comment on the scatterplot.
+```{r}
+plot(Limit,Rating,pch=20)
+```
+
+*Comment* A very strong positive linear relationship is visible.
+
+(b) Run three separate regressions: 
+
+(i) Balance on Age and Limit
+
+(ii) Balance on Age, Rating and Limit 
+
+(iii) Balance on Rating and Limit. 
+```{r}
+m1 = lm(Balance~ Age + Limit)
+
+m2 = lm(Balance~ Age + Limit + Rating)
+
+m3 = lm(Balance~ Limit + Rating)
+```
+
+Present all the regression output in a single table using stargazer. What is the marked difference that you can observe from the output?
+
+```{r,warning=F}
+stargazer(m1,m2,m3,type="text")
+```
+
+
+
+(c) Calculate the variance inflation factor (VIF) and comment on multicollinearity.
+
+```{r}
+r1 = summary(lm(Age~Limit))$r.squared
+r2 = summary(lm(Rating~Age))$r.squared
+r3 = summary(lm(Limit~Rating))$r.squared
+
+R_sq = c(r1,r2,r3)
+R_sq
+
+vif = 1/(1-R_sq)
+model = c("Age on Limit","Rating on Age","Limit on Rating")
+
+data.frame(model,vif)
+```
+ 
+*Comment* the VIF between Limit and Rating is extremely high (as VIF >> 10) so we can say that strong multicollinearity exists between them. other pairs, (age,limit) and (age,rating) have no multicollinearity.
+
+
+## 2. Problem to demonstrate the detection of outlier, leverage and influential points
+
+Attach “Boston” data from MASS library in R. Select median value of owner-occupied homes, as the response and per capita crime rate, nitrogen oxides concentration, proportion of blacks and percentage of lower status of the population as predictors. The objective is to fit a multiple linear regression model of the response on the predictors. With reference to this problem, detect outliers, leverage points and influential points if any.
+
+```{r}
+rm(list=ls())
+library(MASS)
+attach(Boston)
+```
+
+We consider medv as the response and crim, nox, black and lstat as the predictorss. We obtain the multiple Linear Regression as:
+```{r}
+model = lm(medv ~ crim + nox + black + lstat)
+summary(model)
+```
+We obtain the Residual plot by:
+
+```{r}
+plot(resid(model),pch=20, ylab= "Residuals",
+     main= "Residual Plot for the Fitted Model")
+abline(h=0,col="red", lty=2)
+```
+
+*Comment* The Residual plot does not reveal any pattern, but we see some high values positive in the residuals.
+
+We obtain the Standardized Residuals and check for the residuals whose absolute value is greater than 3 to check for outliers.
+
+$$ r_i = \frac{e_i}{\hat{\sigma} \sqrt{1 - h_{ii}}} $$
+
+```{r}
+strd_res = rstandard(model)
+outliers = which(abs(strd_res) > 3)
+cat("Outliers observation number:\n",outliers)
+```
+We obtain the hat-values to check for leverage points. it can be obtained by
+
+$$ h_{ii} = x_i^T (X^T X)^{-1} x_i $$
+
+```{r}
+hat_v = hatvalues(model)
+thres1 = 2*5/nrow(Boston)
+cat("Threshold value:", thres1)
+
+lev_p = which(hat_v > thres1)
+cat("\n\nLeverage point observation number:\n",lev_p)
+```
+
+We obtain the Cook's distance to obtain the influential points. It can be obtained by
+
+$$ D_i = \frac{e_i^2}{p \cdot \hat{\sigma}^2} \left[ \frac{h_{ii}}{(1 - h_{ii})^2} \right] $$
+
+```{r}
+
+cooks_d = cooks.distance(model)
+thres2 = 4/nrow(Boston)
+cat("Threshold value:", thres2)
+
+influence_p = which(cooks_d > thres2)
+
+cat("\n\nLeverage point observation number:\n",influence_p)
+```
+
