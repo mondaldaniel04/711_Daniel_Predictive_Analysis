@@ -1,0 +1,445 @@
+---
+title: "MDTS4214_711_PS_6"
+author: "Daniel D. Mondal"
+date: "2026-02-25"
+output: word_document
+---
+
+## Problem set 6: Model Selection
+
+To demonstrate the application of subset selection methods
+
+Consider the “Hitters” data. For loading the data you need to install ISLR library. We wish to predict a baseball player’s salary on the basis of various predictors. So first we need to choose an optimal model.
+
+```{r}
+rm(list=ls())
+set.seed(123)
+library(ISLR)
+library(leaps)
+str(Hitters)
+```
+
+*1.* Clean the data by removing all rows that have missing value in any variable. You will be working with this clean data.
+
+```{r}
+hitter_clean = na.omit(Hitters)
+head(hitter_clean)
+```
+
+*2.* Split the data randomly into train-test keeping 80% as training sample and remaining as test sample.
+
+```{r}
+n = nrow(hitter_clean)
+train = sample(1:n, floor(0.8*n))
+train_data = hitter_clean[train, ]
+test_data = hitter_clean[-train, ]
+```
+
+```{r, message = F}
+head(train_data)
+head(test_data)
+attach(train_data)
+```
+
+*3.* Perform the best subset selection on the training sample. While choosing the best model fit up to a 19 variable model.Choose the best model according to adjusted $R^2$, BIC, AIC and $C_p$ values. In case the best model differs according to the selection criteria, report the best fitted model according to each selection criterion. In case the best model differs according to the selection criteria, report the best fitted model according to each selection criterion.
+
+```{r}
+reg1 = regsubsets(Salary ~ ., data = train_data, nvmax = 19)
+reg1_sum = summary(reg1)
+```
+
+### Best Subset selection according Aadjusted $R^2$.
+
+```{r}
+c_adjr2 = coef(reg1,which.max(reg1_sum$adjr2))
+c_adjr2
+
+predictors = c(names(c_adjr2)[-c(1,9,13)],"Division","NewLeague")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m1 = lm(formula, train_data)
+
+y_h1 = predict(m1)
+y_test1 = predict(m1,newdata = test_data)
+
+train_mse1 = mean((train_data$Salary - y_h1)^2)
+train_mse1
+
+test_mse1 = mean((test_data$Salary - y_test1)^2)
+test_mse1
+```
+
+### Best Subset selection according BIC
+
+```{r}
+c_bic = coef(reg1,which.min(reg1_sum$bic))
+c_bic
+
+predictors = c(names(c_bic)[-c(1,6)],"Division")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m2 = lm(formula, train_data)
+
+y_h2 = predict(m2)
+y_test2 = predict(m2,newdata = test_data)
+
+train_mse2 = mean((train_data$Salary - y_h2)^2)
+train_mse2
+
+test_mse2 = mean((test_data$Salary - y_test2)^2)
+test_mse2
+```
+
+### Best Subset selection according Mallow's $C_p$ measure:
+
+```{r}
+c_cp = coef(reg1,which.min(reg1_sum$cp))
+c_cp
+
+predictors = c(names(c_cp)[-c(1,9,12)],"Division","NewLeague")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m3 = lm(formula, train_data)
+
+y_h3 = predict(m3)
+y_test3 = predict(m3,newdata = test_data)
+
+train_mse3 = mean((train_data$Salary - y_h3)^2)
+train_mse3
+
+test_mse3 = mean((test_data$Salary - y_test3)^2)
+test_mse3
+```
+
+#### 4. Find the training MSE and test MSE for each of the best models selected according to different criterion as mentioned in 3 and compare their values.
+
+```{r}
+Measure = c("Adjusted R sq.","BIC","Mallow's Cp")
+Train_MSE_1 = c(train_mse1,train_mse2,train_mse3)
+Test_MSE_1 = c(test_mse1,test_mse2,test_mse3)
+
+#Comparision
+output = data.frame(Measure,Train_MSE_1,Test_MSE_1)
+output
+```
+
+#### 5. Repeat 3-4 using forward stepwise selection method.
+
+#### FORWARD STEPWISE SELECTION
+
+```{r}
+reg2 = regsubsets(Salary ~ ., data = train_data, method = "forward", nvmax = 19)
+reg2_sum = summary(reg2)
+```
+
+### Forward Subset selection according Aadjusted $R^2$.
+
+```{r}
+c_adjr2 = coef(reg2,which.max(reg2_sum$adjr2))
+c_adjr2
+
+predictors = c(names(c_adjr2)[-c(1,11,15)],"Division","NewLeague")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m1 = lm(formula, train_data)
+
+y_h1 = predict(m1)
+y_test1 = predict(m1,newdata = test_data)
+
+train_mse1 = mean((train_data$Salary - y_h1)^2)
+train_mse1
+
+test_mse1 = mean((test_data$Salary - y_test1)^2)
+test_mse1
+```
+
+### Forward Subset selection according BIC
+
+```{r}
+c_bic = coef(reg2,which.min(reg2_sum$bic))
+c_bic
+
+predictors = c(names(c_bic)[-c(1,8)],"Division")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m2 = lm(formula, train_data)
+
+y_h2 = predict(m2)
+y_test2 = predict(m2,newdata = test_data)
+
+train_mse2 = mean((train_data$Salary - y_h2)^2)
+train_mse2
+
+test_mse2 = mean((test_data$Salary - y_test2)^2)
+test_mse2
+```
+
+### Forward Subset selection according Mallow's $C_p$ measure:
+
+```{r}
+c_cp = coef(reg2,which.min(reg2_sum$cp))
+c_cp
+
+predictors = c(names(c_cp)[-c(1,8,12)],"Division","NewLeague")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m3 = lm(formula, train_data)
+
+y_h3 = predict(m3)
+y_test3 = predict(m3,newdata = test_data)
+
+train_mse3 = mean((train_data$Salary - y_h3)^2)
+train_mse3
+
+test_mse3 = mean((test_data$Salary - y_test3)^2)
+test_mse3
+```
+
+### Comparison Matrix 
+```{r}
+Measure = c("Adjusted R sq.","BIC","Mallow's Cp")
+Train_MSE_2 = c(train_mse1,train_mse2,train_mse3)
+Test_MSE_2 = c(test_mse1,test_mse2,test_mse3)
+
+#Comparision
+output = data.frame(Measure,Train_MSE_2,Test_MSE_2)
+output
+```
+
+
+#### BACKWARD STEPWISE SELECTION
+
+```{r}
+reg3 = regsubsets(Salary ~ ., data = train_data, nvmax = 19, method = "backward")
+reg3_sum = summary(reg3)
+```
+
+### Backward Subset selection according Aadjusted $R^2$.
+
+```{r}
+c_adjr2 = coef(reg3,which.max(reg3_sum$adjr2))
+c_adjr2
+
+predictors = c(names(c_adjr2)[-c(1,10,14)],"Division","NewLeague")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m1 = lm(formula, train_data)
+
+y_h1 = predict(m1)
+y_test1 = predict(m1,newdata = test_data)
+
+train_mse1 = mean((train_data$Salary - y_h1)^2)
+train_mse1
+
+test_mse1 = mean((test_data$Salary - y_test1)^2)
+test_mse1
+```
+
+### Backward Subset selection according BIC
+
+```{r}
+c_bic = coef(reg3,which.min(reg3_sum$bic))
+c_bic
+
+predictors = c(names(c_bic)[-c(1,6)],"Division")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m2 = lm(formula, train_data)
+
+y_h2 = predict(m2)
+y_test2 = predict(m2,newdata = test_data)
+
+train_mse2 = mean((train_data$Salary - y_h2)^2)
+train_mse2
+
+test_mse2 = mean((test_data$Salary - y_test2)^2)
+test_mse2
+```
+
+### Backward Subset selection according Mallow's $C_p$ measure:
+
+```{r}
+c_cp = coef(reg3,which.min(reg3_sum$cp))
+c_cp
+
+predictors = c(names(c_cp)[-c(1,10,14)],"Division","NewLeague")
+predictors
+
+formula = reformulate(termlabels = predictors, response = "Salary")
+formula
+m3 = lm(formula, train_data)
+
+y_h3 = predict(m3)
+y_test3 = predict(m3,newdata = test_data)
+
+train_mse3 = mean((train_data$Salary - y_h3)^2)
+train_mse3
+
+test_mse3 = mean((test_data$Salary - y_test3)^2)
+test_mse3
+```
+
+### Comparison Matrix 
+```{r}
+Measure = c("Adjusted R sq.","BIC","Mallow's Cp")
+Train_MSE_3 = c(train_mse1,train_mse2,train_mse3)
+Test_MSE_3 = c(test_mse1,test_mse2,test_mse3)
+
+#Comparision
+output = data.frame(Measure,Train_MSE_3,Test_MSE_3)
+output
+```
+
+### 7. Compare the results of the three methods in terms of choice of best model, train MSE amd test MSE.
+
+```{r}
+Method = rep(c("Best","Forward","Backward"),each= 3)
+Measure_used = rep(Measure,times = 3) 
+Train_MSE = c(Train_MSE_1,Train_MSE_2,Train_MSE_3)
+Test_MSE = c(Test_MSE_1,Test_MSE_2,Test_MSE_3)
+compare_mse = data.frame(Method,Measure_used,Train_MSE,Test_MSE)
+compare_mse
+```
+
+#### Comparison of Training MSE:
+
+- We observe that Adjusted $R^2$ gives the least training MSE in all three methods, of which forward subset method has the least. Thus we can say the forward method fits the data better than the otherss.
+
+#### Comparison of Test MSE
+
+- We observe that Mallow's $C_p$ measure performs better than the other measures on an average, of which best Subset method has the least test MSE. 
+
+#### Interpretation
+
+- Forward selection has the lowest training MSE, its test MSE is higher which indicates slight overfitting.
+- Backward selection performs similarly to forward but slightly worse.
+- Best subset selection, especially using $C_p$, provides the best balance between bias and variance.
+
+#### Conclusion
+
+-Evaluating all possible models (best subset) can lead to better generalization.
+-Stepwise methods (forward/backward) are faster but may not always give the optimal model, as some useful combinations might be left out.
+
+---
+
+### Problem Set 7: Shrinkage Methods
+
+We would be working with the Hitters dataset available in the ISLR library. We have to predict the Salary based on all available variables. First, we make sure that we delete all rows with one or more missing values.
+
+#### 1. We split the data set into a training set and a test set randomly, keeping 100 observations in the test set and the remaining in the training set.
+
+```{r,message=F}
+set.seed(123)
+rm(list=ls())
+library(glmnet)
+library(ISLR)
+
+Hitters = na.omit(Hitters)
+```
+
+```{r}
+test_index = sample(1:nrow(Hitters), 100)
+
+test_data = Hitters[test_index, ]
+train_data = Hitters[-test_index, ]
+```
+
+#### 2. We train the model using least squares and report the train MSE and test MSE.
+
+```{r}
+lm_model = lm(Salary ~ ., data = train_data)
+summary(lm_model)
+```
+
+```{r}
+y_hat = predict(lm_model, newdata = train_data)
+y_test = predict(lm_model, newdata = test_data)
+
+train_mse = mean((train_data$Salary-y_hat)^2)
+train_mse
+test_mse = mean((test_data$Salary-y_test)^2)
+test_mse
+```
+
+#### 3.We fit ridge regression models on the training set, with grid values of $\lamda$. We report the following:
+
+(i) the dimension of the coefficient matrix so obtained.
+(ii) The $l_2$ norm of the regression coefficients corresponding to the 50th and 60th choice of $\lambda$. We comment on the output.
+(iii) Test MSE corresponding to these two choices of $\lambda$.
+
+```{r}
+lambda_grid = 10^seq(10, -2, length = 100)
+x_train = model.matrix(Salary~.,train_data)[,-1]
+x_test = model.matrix(Salary~.,test_data)[,-1]
+head(x_train)
+ridge_model=glmnet(x_train, train_data$Salary, alpha = 0,lambda=lambda_grid)
+dim(coef(ridge_model))
+```
+
+(i) Dimension of Coefficient Matrix
+
+```{r}
+dim(coef(ridge_model))
+```
+
+(ii) Coefficients for 50th and 60th value of $\lambda$ respectively
+
+```{r}
+# 50th value
+coef_50 = coef(ridge_model)[, 50]
+coef_50
+cat("\n")
+#60th Value
+coef_60 = coef(ridge_model)[, 60]
+coef_60
+```
+
+(ii). L2 Norm of Coefficients
+
+```{r}
+l2_norm = function(beta){
+  sqrt(sum(beta^2))
+}
+
+# l2 norm of 50th lambda
+l2_50 = l2_norm(coef_50)
+l2_50
+
+# l2 norm of 60th lambda
+l2_60 = l2_norm(coef_60)
+l2_60
+```
+
+(iii). Test MSE for 50th and 60th $\lambda$
+
+```{r}
+# Predictions
+ridge_pred_50 = predict(ridge_model, s = lambda_grid[50], newx = x_test)
+ridge_pred_60 = predict(ridge_model, s = lambda_grid[60], newx = x_test)
+
+# Test MSE for 50th lambda
+Test_mse_50 = mean((test_data$Salary - ridge_pred_50)^2)
+Test_mse_50
+
+# Test MSE for the 60th lambda
+Test_mse_60 = mean((test_data$Salary - ridge_pred_60)^2)
+Test_mse_60
+```
+
+We observe that the test MSE is dropping as Lamda increases.
