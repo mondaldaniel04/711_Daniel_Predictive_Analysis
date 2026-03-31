@@ -94,22 +94,22 @@ We obtain the error measures from the confusion matrix.
 ### f. Is there any change in the test error rate if we have worked with only the two predictors lag 1 and lag 2?
 ```{r,warning=F}
 model2 = glm(Direction ~ Lag1 + Lag2, data = train_data, family = binomial)
-prob_reduced = predict(model2, newdata = test_data, type = "response")
+prob = predict(model2, newdata = test_data, type = "response")
 
 tpr1 = c()
 fpr1 = c()
 measure1 = c()
-for(i in 1:length(prob_reduced))
+for(i in 1:length(prob))
 {
-  pred_reduced = ifelse(prob_reduced < prob_reduced[i],0,1)
+  predict_reduced = ifelse(prob < prob[i],0,1)
   
-  conf_matrix = confusionMatrix(as.factor(pred_reduced),as.factor(test_data$Direction))
-  tpr1[i] = conf_matrix$byClass["Sensitivity"]
-  fpr1[i] = 1 - conf_matrix$byClass["Specificity"] 
+  conf_matrix1 = confusionMatrix(as.factor(predict_reduced),as.factor(test_data$Direction))
+  tpr1[i] = conf_matrix1$byClass["Sensitivity"]
+  fpr1[i] = 1 - conf_matrix1$byClass["Specificity"] 
   measure1[i] = tpr1[i]*(1-fpr1[i])
 }
 
-output1 = data.frame("Cut_Point" = pred_test, "TPR" = tpr1,"FPR" = fpr1,"Compare" = measure1)
+output1 = data.frame("Cut_Point" = prob, "TPR" = tpr1,"FPR" = fpr1,"Compare" = measure1)
 head(output1)
 
 output1[which.max(output$Compare),]
@@ -118,26 +118,23 @@ cat("The cutpoint for which TPR(1-FPR) is minimum:", opt_cutpoint1)
 
 
 
-opt_pred = ifelse(prob_reduced < opt_cutpoint1, 0,1)
+opt_pred = ifelse(prob < opt_cutpoint1, 0,1)
 opt_conf_matrix = confusionMatrix(as.factor(opt_pred),as.factor(test_data$Direction))
 opt_conf_matrix
 ```
 
-*Interpretation:* 
+### Evaluation of Model Performance
 
-In classification, we define:
-- Sensitivity (True Positive Rate, TPR): The ability of the model to correctly identify "Up" days.
+To assess the efficacy of our classification models:
 
+- Sensitivity (Recall): Measures the proportion of actual "Up" days that were correctly identified by the model.
 $$\text{Sensitivity} = \frac{TP}{TP + FN}$$
 
-- Specificity (True Negative Rate, TNR): The ability of the model to correctly identify "Down" days.
-
+- Specificity: Measures the proportion of actual "Down" days that were correctly identified.
 $$\text{Specificity} = \frac{TN}{TN + FP}$$
 
-- Model 1 (Full Model):This model demonstrates a more balanced predictive performance. With moderate values for both Sensitivity and Specificity, it shows a consistent ability to identify both "Up" and "Down" market movements, suggesting it captures a broader range of the underlying data variance, even if the individual predictors are not highly significant.
+Comparative Analysis:
 
-- Model 2 (Reduced Model - Lag1 & Lag2):The reduced model exhibits a significant bias toward one class. While it achieves a high Specificity, correctly identifying the "Down" days, it suffers from a negligible Sensitivity. 
+- Model 1: Full Feature SetThe full model provides a balanced predictive profile. With a sensitivity of $0.5116$ and a specificity of $0.5574$, the model demonstrates a relatively even capability in detecting both market advances and declines.
 
-$$\text{Sensitivity} \approx 0 \implies TP \approx 0$$
-
-This indicates that the model is effectively predicting the majority class or failing to find a boundary that captures "Up" movements. While the test error rate might be lower due to the high Specificity, the model lacks practical utility for predicting positive market shifts.
+- Model 2: Reduced Feature Set ($Lag1$ & $Lag2$)The streamlined model shows a shift in classification priority. While it achieves a notably higher specificity of $0.7869$, making it quite effective at identifying "Down" days, this gain comes at the expense of sensitivity, which drops to $0.4419$.
